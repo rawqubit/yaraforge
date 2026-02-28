@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "yaraforge"
+version = "1.0.0"
+description = "YARA rule deployment and scanning automation"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["yara", "security", "malware", "scanning", "infosec", "threat-detection"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    "yara-python>=4.3.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+ssh = ["paramiko>=3.0.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+
+[project.scripts]
+yaraforge = "yaraforge.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/rawqubit/yaraforge"
+Repository = "https://github.com/rawqubit/yaraforge"
+Issues = "https://github.com/rawqubit/yaraforge/issues"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+strict = false
+ignore_missing_imports = true
