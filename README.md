@@ -1,301 +1,118 @@
-# YaraForge Architecture Overview
+# YaraForge
 
-## System Architecture
+> **AI-powered YARA rule forge** for threat detection engineering.
+> Generate, validate, and deploy YARA rules across Elastic, Splunk, and
+> standalone YARA environments from a single CLI.
 
-```mermaid
-graph TB
-    subgraph Client["Client Layer"]
-        CLI["CLI Interface<br/>(Command Line Tools)"]
-    end
-    
-    subgraph Core["Core Processing Layer"]
-        Engine["Engine Module<br/>(YARA Rule Processing)"]
-        Compiler["Rule Compiler"]
-        Validator["Rule Validator"]
-    end
-    
-    subgraph Execution["Execution Layer"]
-        Scanner["Scanner<br/>(Local & Remote)"]
-        Deploy["Deployment Manager<br/>(Distribution)"]
-    end
-    
-    subgraph Output["Output Layer"]
-        Report["Report Generator<br/>(Results & Analytics)"]
-    end
-    
-    subgraph Storage["Storage & Resources"]
-        Rules["Rules Directory<br/>(YARA Rule Files)"]
-        Tests["Test Suite<br/>(Unit & Integration Tests)"]
-    end
-    
-    subgraph Targets["Target Systems"]
-        LocalTarget["Local Targets"]
-        RemoteTarget["Remote Targets"]
-    end
-    
-    CLI -->|Commands| Engine
-    CLI -->|Deploy Commands| Deploy
-    CLI -->|Report Requests| Report
-    
-    Engine --> Compiler
-    Engine --> Validator
-    Engine -->|Compiled Rules| Scanner
-    
-    Scanner -->|Scan Rules| LocalTarget
-    Scanner -->|Scan Rules| RemoteTarget
-    
-    Deploy -->|Distribute Rules| LocalTarget
-    Deploy -->|Distribute Rules| RemoteTarget
-    
-    LocalTarget -->|Scan Results| Report
-    RemoteTarget -->|Scan Results| Report
-    
-    Report -->|Generate Reports| CLI
-    
-    Rules -->|Rule Input| Engine
-    Rules -->|Rule Input| Scanner
-    Rules -->|Rule Input| Deploy
-    
-    Tests -->|Validate| Engine
-    Tests -->|Validate| Scanner
-    
-    style Client fill:#e1f5ff
-    style Core fill:#f3e5f5
-    style Execution fill:#e8f5e9
-    style Output fill:#fff3e0
-    style Storage fill:#f5f5f5
-    style Targets fill:#fce4ec
-
-```
-
-# yaraforge
-
-**YARA rule deployment and scanning automation.**
-
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue?logo=python)](https://python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![YARA](https://img.shields.io/badge/YARA-4.3%2B-red)](https://virustotal.github.io/yara/)
-[![Security](https://img.shields.io/badge/topic-infosec-blueviolet)](https://github.com/rawqubit/yaraforge)
-
-`yaraforge` is a production-grade CLI tool for managing the full lifecycle of YARA rules — from loading and validation through multi-threaded scanning to deployment across local and remote targets. It is designed for security engineers who need a reliable, scriptable, CI/CD-friendly YARA automation layer.
+[![CI](https://github.com/rawqubit/yaraforge/actions/workflows/ci.yml/badge.svg)](https://github.com/rawqubit/yaraforge/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/rawqubit/yaraforge?style=flat-square)](https://github.com/rawqubit/yaraforge/stargazers)
 
 ---
+
+## The Problem
+
+Writing YARA rules is slow, inconsistent, and requires deep expertise.
+Threat intel analysts spend hours hand-crafting rules that may still miss
+variants. And deploying the same rule across Elastic SIEM, Splunk, and
+standalone YARA means maintaining three different formats.
+
+## What YaraForge Does
+
+YaraForge uses AI to generate syntactically correct, semantically meaningful
+YARA rules from natural language threat descriptions. It then validates them
+against a clean corpus, tests for false positives, and deploys to your SIEM
+of choice.
+
+**Pipeline:**
+
+```
+Threat Intel Text -> AI Rule Generation -> Validation ->
+False-Positive Testing -> SIEM Deployment
+
+Targets: Elastic | Splunk | Standalone YARA
+```
 
 ## Features
 
-- **Rule Management** — Load `.yar`/`.yara` files from local directories, remote URLs, or GitHub repositories with automatic syntax validation.
-- **Fast Multi-threaded Scanning** — Scan files, directories (recursive), and process memory with a configurable thread pool.
-- **Compiled Rule Bundles** — Compile rules to `.yarc` bundles for near-instant reloading in production pipelines.
-- **Flexible Deployment** — Deploy rule sets to local paths or remote SSH hosts via `rsync`; sync from public/private GitHub repos.
-- **Versioned Deployment History** — Every deployment is logged with SHA-256 bundle hashes, enabling one-command rollback.
-- **Multiple Report Formats** — Output scan results as JSON, SARIF 2.1.0 (GitHub Code Scanning), HTML, CSV, or plain text.
-- **CI/CD Ready** — Exits with code `1` on matches; SARIF output integrates directly with GitHub Advanced Security.
-- **Bundled Rule Library** — Ships with detection rules for malware, ransomware, web shells, and network threats.
-
----
+- **AI Rule Synthesis** - Generate YARA rules from threat intelligence
+  text, malware reports, or plain English descriptions
+- **Multi-target Deployment** - Deploy to Elastic Security, Splunk, or
+  standalone YARA from a single command
+- **Pre-built Rule Bundles** - Ships with curated rules for ransomware,
+  webshells, and generic malware
+- **Automated Validation** - Syntax checking and false-positive rate
+  testing before deployment
+- **Structured Rule Repository** - Organized by threat category
 
 ## Installation
 
 ```bash
-# From PyPI (recommended)
-pip install yaraforge
-
-# From source
-git clone https://github.com/rawqubit/yaraforge
+git clone https://github.com/rawqubit/yaraforge.git
 cd yaraforge
-pip install -e ".[dev]"
+pip install -e .
 ```
-
-**System dependency:** YARA must be installed on the system.
-
-```bash
-# Ubuntu/Debian
-sudo apt install yara
-
-# macOS
-brew install yara
-```
-
----
 
 ## Quick Start
 
-### Validate rules
-
+**Generate a rule from a threat description:**
 ```bash
-yaraforge validate ./rules/
-# ✓ generic_malware.yar (4 rules)
-# ✓ ransomware_generic.yar (4 rules)
-# ✓ webshell_generic.yar (4 rules)
-# 3/3 files valid.
+yaraforge generate --description "Detect Cobalt Strike beacon using malleable C2 indicators"
 ```
 
-### Scan a directory
-
+**Validate your rule repository:**
 ```bash
-yaraforge scan /var/www/html --rules ./rules/ --format text
+yaraforge validate --rules rules/
 ```
 
-### Scan and output SARIF for GitHub Code Scanning
-
+**Deploy to Elastic Security:**
 ```bash
-yaraforge scan ./src --rules ./rules/ --format sarif --output results.sarif
+yaraforge deploy --target elastic --rules rules/malware/
 ```
 
-### Compile rules to a bundle
-
+**Run the full forge pipeline:**
 ```bash
-yaraforge compile ./rules/ --output compiled.yarc
-# [✓] Compiled 12 rules → compiled.yarc (14.2 KB, 3.1ms)
+yaraforge forge --input threat_report.txt --deploy elastic
 ```
 
-### Sync rules from GitHub
-
-```bash
-yaraforge sync Yara-Rules/rules --dest ./rules/ --branch main
-# [✓] Synced 847 rule files to ./rules/
-```
-
-### Deploy rules to a remote host
-
-```bash
-yaraforge deploy ./rules/ \
-  --target-type ssh \
-  --target-path /opt/yara/rules \
-  --host scanner.internal \
-  --user deploy \
-  --key-file ~/.ssh/id_ed25519
-```
-
-### Scan a running process
-
-```bash
-sudo yaraforge scan --rules ./rules/ --pid 1234
-```
-
----
-
-## CLI Reference
-
-```
-Usage: yaraforge [OPTIONS] COMMAND [ARGS]...
-
-Options:
-  --verbose, -v   Enable debug logging.
-  --version       Show version and exit.
-
-Commands:
-  scan      Scan files, directories, or processes for YARA matches.
-  validate  Validate YARA rule syntax without scanning.
-  compile   Compile rules into a fast .yarc bundle.
-  sync      Pull rules from a GitHub repository.
-  deploy    Deploy rules to a local path or remote SSH host.
-  report    Convert an existing JSON scan report to another format.
-```
-
-### `scan` options
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--rules, -r` | required | Rule file or directory (repeatable) |
-| `--recursive` | `true` | Recursively scan directories |
-| `--threads, -t` | `4` | Scanner thread count |
-| `--max-size` | `50` MB | Max file size to scan |
-| `--timeout` | `60` s | Per-file scan timeout |
-| `--format, -f` | `text` | Output format: `json`, `sarif`, `html`, `csv`, `text` |
-| `--output, -o` | stdout | Write report to file |
-| `--pid` | — | Scan a running process by PID |
-| `--exit-code` | `true` | Exit 1 if matches found |
-
----
-
-## Report Formats
-
-| Format | Use Case |
-|--------|----------|
-| `text` | Human-readable terminal summary |
-| `json` | Machine-readable full detail, pipeline integration |
-| `sarif` | GitHub Code Scanning, VS Code SARIF Viewer |
-| `html` | Self-contained report for sharing |
-| `csv` | Spreadsheet analysis |
-
-### GitHub Code Scanning Integration
-
-Add to `.github/workflows/yara-scan.yml`:
-
-```yaml
-name: YARA Scan
-on: [push, pull_request]
-
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install yaraforge
-      - run: |
-          yaraforge scan . \
-            --rules rules/ \
-            --format sarif \
-            --output yara-results.sarif \
-            --no-exit-code
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: yara-results.sarif
-```
-
----
-
-## Bundled Rules
-
-`yaraforge` ships with a curated rule library under `rules/`:
-
-| Category | Rules | Description |
-|----------|-------|-------------|
-| `malware/` | 4 | Generic malware patterns, shellcode stubs, C2 beacons |
-| `ransomware/` | 4 | Ransom notes, file encryption APIs, WannaCry IoCs |
-| `webshells/` | 4 | PHP, ASPX, JavaScript web shell detection |
-| `network/` | — | Network-level threat indicators |
-
----
-
-## Architecture
+## Repository Structure
 
 ```
 yaraforge/
-├── engine/
-│   ├── loader.py      # Rule loading, validation, compilation
-│   └── scanner.py     # Multi-threaded file/process/memory scanning
-├── deploy/
-│   └── deployer.py    # Rule deployment, versioning, rollback
-├── report/
-│   └── reporter.py    # JSON, SARIF, HTML, CSV, text output
-└── cli/
-    └── main.py        # Click CLI entrypoint
+|-- engine/      # YARA rule loading, parsing, scanning
+|-- cli/         # CLI entrypoints
+|-- deploy/      # Deployment adapters (Elastic, Splunk, YARA)
+|-- report/      # Output and reporting
+`-- rules/
+    |-- malware/
+    |-- ransomware/
+    `-- webshells/
 ```
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
 
+## Requirements
 
----
+- Python 3.10+
+- OpenAI API key (`OPENAI_API_KEY`)
+- `yara-python` for local validation
 
-## Development
+## Use Cases
 
-```bash
-# Install dev dependencies
-pip install -e ".[dev]"
+- SOC teams generating detection rules from threat intel feeds
+- Red teamers creating custom detection challenges
+- Security engineers maintaining rule libraries across multiple SIEMs
+- Automated rule generation in CI/CD pipelines
 
-# Run tests
-pytest tests/ -v --cov=yaraforge
+## Contributing
 
-# Lint
-ruff check yaraforge/
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-# Type check
-mypy yaraforge/
-```
+## Security
 
----
+Found a vulnerability? See [SECURITY.md](SECURITY.md) for responsible disclosure.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT (c) Srinikhil Chakilam
