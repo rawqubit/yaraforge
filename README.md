@@ -105,6 +105,45 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
 - Security engineers maintaining rule libraries across multiple SIEMs
 - Automated rule generation in CI/CD pipelines
 
+
+## Demo
+
+```
+$ yaraforge generate --description "Detect Cobalt Strike beacon using default sleep mask and malleable C2 profile patterns"
+
+ YaraForge v1.0.0  AI-Powered YARA Rule Forge
+
+ Generating YARA rule...
+
+rule CobaltStrike_Beacon_SleepMask_MalleableC2
+{
+    meta:
+        description = "Detects Cobalt Strike beacon with default sleep mask and malleable C2 indicators"
+        author      = "YaraForge / rawqubit"
+        date        = "2025-03-10"
+        reference   = "https://github.com/rawqubit/yaraforge"
+        severity    = "HIGH"
+
+    strings:
+        $sleep_mask_1 = { 4C 8B 53 08 45 8B 0A 45 8B 5A 04 4D 8D 52 08 }
+        $malleable_c2 = "Content-Type: application/octet-stream" ascii
+        $beacon_str   = /MZRE[A-Za-z0-9+/]{200,}/ ascii
+
+    condition:
+        uint16(0) == 0x5A4D and
+        any of ($sleep_mask_*) and
+        ($malleable_c2 or $beacon_str)
+}
+
+ Validating rule...
+  Syntax check:   PASSED
+  False-positive test (10k clean files): 0 FP (0.00%)
+  Rule saved to: rules/malware/cobalt_strike_beacon_sleepmask.yar
+
+ Deploying to Elastic Security...
+  Rule created: "CobaltStrike_Beacon_SleepMask_MalleableC2" (ID: rule-4821)
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
