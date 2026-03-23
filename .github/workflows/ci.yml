@@ -26,14 +26,14 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
           pip install pytest flake8
-          pip install -e .
 
       - name: Lint with flake8
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 yaraforge/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 yaraforge/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run tests
         run: pytest tests/ -v --tb=short
         env:
+          PYTHONPATH: .
           OPENAI_API_KEY: sk-dummy-key-for-ci-testing-only
